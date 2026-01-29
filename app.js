@@ -79,18 +79,56 @@ async function loadLedger() {
 }
 
 async function addEntry() {
-    const date = document.getElementById("ride-date").value;
-    const route = document.getElementById("ride-route").value;
-    const dist = document.getElementById("ride-distance").value;
-    const dur = document.getElementById("ride-duration").value;
-    const diff = document.getElementById("ride-difficulty").value;
+    try {
+        // 1. 抓取 HTML 元素 (請確保 HTML 裡的 ID 叫 ride-distance 和 ride-duration)
+        const dateEl = document.getElementById("ride-date");
+        const routeEl = document.getElementById("ride-route");
+        const distEl = document.getElementById("ride-distance");
+        const durEl = document.getElementById("ride-duration");
+        const diffEl = document.getElementById("ride-difficulty");
 
-    if (!date || !route || !dist) return alert("請填寫必要欄位");
+        // 2. 檢查欄位是否存在 (防止 null 報錯)
+        if (!dateEl || !routeEl || !distEl || !durEl) {
+            console.error("找不到輸入欄位，請檢查 HTML ID 是否正確");
+            return;
+        }
 
-    const { error } = await supabaseClient.from("cycling_logs").insert([{
-        ride_date: date, route_name: route, distance: parseFloat(dist), duration: parseInt(dur), difficulty: diff
-    }]);
-    if (error) alert("儲存失敗"); else loadLedger();
+        // 3. 取得數值並進行型別轉換
+        const rideDate = dateEl.value;
+        const routeName = routeEl.value.trim();
+        const distance = parseFloat(distEl.value); // 轉成浮點數 (km)
+        const duration = parseInt(durEl.value);   // 轉成整數 (min)
+        const difficulty = diffEl ? diffEl.value : "一般";
+
+        // 4. 驗證必要資料
+        if (!rideDate || !routeName || isNaN(distance) || isNaN(duration)) {
+            alert("請完整填寫日期、路線、距離與時間！");
+            return;
+        }
+
+        // 5. 送出至 Supabase
+        const { error } = await supabaseClient.from("cycling_logs").insert([{
+            ride_date: rideDate,
+            route_name: routeName,
+            distance: distance,
+            duration: duration,
+            difficulty: difficulty
+        }]);
+
+        if (error) {
+            console.error("Supabase 寫入錯誤:", error);
+            alert("儲存失敗：" + error.message);
+        } else {
+            // 6. 成功後清空部分欄位並重新整理列表
+            routeEl.value = "";
+            distEl.value = "";
+            durEl.value = "";
+            alert("紀錄儲存成功！");
+            loadLedger(); // 重新載入列表與更新均速統計
+        }
+    } catch (err) {
+        console.error("程式執行出錯:", err);
+    }
 }
 
 async function deleteEntry(id) {
