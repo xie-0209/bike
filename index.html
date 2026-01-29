@@ -1,36 +1,69 @@
 <!DOCTYPE html>
-<html lang="zh-Hant">
+<html lang="zh-TW">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>單車日誌 - 登入</title>
-    <link rel="stylesheet" href="style.css">
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>單車日誌 - 登入</title>
+  <link rel="stylesheet" href="style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="app.js" defer></script>
 </head>
-<body id="index-page">
-    <div class="container">
-        <header>
-            <h1>🚴‍♂️ 單車日誌系統</h1>
-            <p id="js-status">系統初始化中...</p>
-        </header>
-
-        <div id="login-form" class="card">
-            <h2>會員登入</h2>
-            <input type="text" id="login-account" placeholder="帳號 (ID)">
-            <input type="password" id="login-password" placeholder="密碼">
-            <button class="btn-primary" onclick="handleLogin()">登入</button>
-        </div>
-
-        <div id="signup-form" class="card hidden">
-            <h2>新夥伴註冊</h2>
-            <input type="text" id="signup-account" placeholder="設定帳號 (ID)">
-            <input type="password" id="signup-password" placeholder="設定密碼 (至少6位)">
-            <input type="text" id="signup-username" placeholder="顯示名稱 (如: 謝秉宸)">
-            <button class="btn-success" onclick="handleSignup()">註冊並登入</button>
-        </div>
-
-        <button id="toggle-auth-btn" class="btn-outline" onclick="toggleAuthMode()">還沒有帳號？前往註冊</button>
+<body>
+  <div class="container" id="index-page">
+    <div class="header-box">
+      <h1>🚴♂️ 單車日誌系統</h1>
+      <p>紀錄你的每一公里踏板紀錄</p>
     </div>
-    <script src="app.js"></script>
+    <div id="js-status" class="status-tag">系統初始化中...</div>
+    <div id="user-info" class="user-info">尚未登入</div>
+    <div class="card">
+      <h2>會員登入</h2>
+      <div class="row" id="login-form">
+        <div class="input-group">
+          <label>帳號 (ID)</label>
+          <input id="login-account" placeholder="例如 hc001" />
+        </div>
+        <div class="input-group">
+          <label>密碼</label>
+          <input id="login-password" type="password" placeholder="請輸入密碼" />
+        </div>
+        <button class="btn-primary" type="button" onclick="handleLogin()">登入系統</button>
+      </div>
+      <div id="auth-status" class="auth-status"></div>
+    </div>
+    <div id="stats-bar" class="card hidden" style="display: flex; gap: 20px; justify-content: center; align-items: center; text-align: center;">
+  <div>
+    <div style="font-size: 14px; color: #64748b;">總騎乘次數</div>
+    <div id="stat-total-count" style="font-size: 24px; font-weight: bold; color: #2563eb;">0</div>
+  </div>
+  <div style="width: 1px; height: 40px; background: #e2e8f0;"></div>
+  <div>
+    <div style="font-size: 14px; color: #64748b;">總平均耗時</div>
+    <div id="stat-avg-duration" style="font-size: 24px; font-weight: bold; color: #16a34a;">0 min</div>
+  </div>
+</div>
+    <pre id="debug" class="debug"></pre>
+  </div>
 </body>
 </html>
+<div id="signup-form" class="hidden">
+  <h2>新夥伴註冊</h2>
+  <div class="row">
+    <div class="input-group">
+      <label>設定帳號 (ID)</label>
+      <input id="signup-account" placeholder="例如: bike_lover" />
+    </div>
+    <div class="input-group">
+      <label>設定密碼</label>
+      <input id="signup-password" type="password" placeholder="至少 6 位數" />
+    </div>
+    <div class="input-group">
+      <label>顯示名稱</label>
+      <input id="signup-username" placeholder="你的外號" />
+    </div>
+    <button class="btn-success" type="button" onclick="handleSignup()">建立帳號</button>
+  </div>
+</div>
+<div class="row" style="margin-top: 15px;">
+  <button class="btn-outline" id="toggle-auth-btn" onclick="toggleAuthMode()">還沒有帳號？前往註冊</button>
+</div>
