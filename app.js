@@ -1,85 +1,43 @@
-// ===== 1. Supabase 設定 =====
+// ===== 1. Supabase 設定 (已存入您的連線資訊) =====
 const SUPABASE_URL = "https://bgiwbmmloczysitrepxt.supabase.co";
-const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJnaXdibW1sb2N6eXNpdHJlcHh0Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2OTQ4ODQ3MywiZXhwIjoyMDg1MDY0NDczfQ.J9x82H5Q5OCIEJRx4fDeCu1sHAGyaPKxk6BTOweJiJM"; // 務必更換為 anon key
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJnaXdibW1sb2N6eXNpdHJlcHh0Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2OTQ4ODQ3MywiZXhwIjoyMDg1MDY0NDczfQ.J9x82H5Q5OCIEJRx4fDeCu1sHAGyaPKxk6BTOweJiJM";
 
 const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // ===== 2. DOM 元素宣告 =====
-const debugEl = document.getElementById("debug");
 const ledgerTbodyEl = document.getElementById("ledger-tbody");
 const userInfoEl = document.getElementById("user-info");
-const jsStatusEl = document.getElementById("js-status");
 
-function logDebug(msg, obj) {
-  if (debugEl) {
-    const text = `[${new Date().toLocaleTimeString()}] ${msg} ${obj ? JSON.stringify(obj) : ''}\n`;
-    debugEl.textContent += text;
-  }
-  console.log("[DEBUG]", msg, obj || "");
+// ===== 3. Auth 邏輯 (登入/註冊/登出) =====
+async function handleLogin() {
+  const account = document.getElementById("login-account").value.trim();
+  const password = document.getElementById("login-password").value;
+  const email = account + "@demo.local";
+  const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+  if (error) return alert("登入失敗: " + error.message);
+  window.location.href = "ledger.html";
 }
 
-if (jsStatusEl) jsStatusEl.textContent = "✅ 系統連線中...";
-
-// ===== 3. Auth 邏輯 (註冊/登入/登出) =====
-
-// 切換登入與註冊介面
-function toggleAuthMode() {
-  const loginForm = document.getElementById("login-form");
-  const signupForm = document.getElementById("signup-form");
-  const toggleBtn = document.getElementById("toggle-auth-btn");
-
-  if (signupForm.classList.contains("hidden")) {
-    loginForm.classList.add("hidden");
-    signupForm.classList.remove("hidden");
-    toggleBtn.textContent = "已有帳號？返回登入";
-  } else {
-    loginForm.classList.remove("hidden");
-    signupForm.classList.add("hidden");
-    toggleBtn.textContent = "還沒有帳號？前往註冊";
-  }
-}
-
-// 註冊帳號
 async function handleSignup() {
   const account = document.getElementById("signup-account").value.trim();
   const password = document.getElementById("signup-password").value;
   const username = document.getElementById("signup-username").value.trim();
-
   if (!account || !password || !username) return alert("請填寫所有欄位");
-  
   const email = account + "@demo.local";
-  logDebug("嘗試註冊...", { email });
-
-  const { data: authData, error: authError } = await supabaseClient.auth.signUp({
-    email,
-    password,
-  });
-
+  const { data: authData, error: authError } = await supabaseClient.auth.signUp({ email, password });
   if (authError) return alert("註冊失敗: " + authError.message);
-
   if (authData.user) {
-    // 建立個人檔案
-    const { error: profileError } = await supabaseClient
-      .from("profiles")
-      .insert([{ id: authData.user.id, username: username, role: "user" }]);
-
-    if (profileError) logDebug("Profile 建立失敗", profileError);
-    
+    await supabaseClient.from("profiles").insert([{ id: authData.user.id, username, role: "user" }]);
     alert("註冊成功！");
     window.location.href = "ledger.html";
   }
 }
 
-// 登入功能
-async function handleLogin() {
-  const account = document.getElementById("login-account").value.trim();
-  const password = document.getElementById("login-password").value;
-  const email = account + "@demo.local";
-
-  const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
-  if (error) return alert("登入失敗: " + error.message);
-  
-  window.location.href = "ledger.html";
+function toggleAuthMode() {
+  document.getElementById("login-form").classList.toggle("hidden");
+  document.getElementById("signup-form").classList.toggle("hidden");
+  const btn = document.getElementById("toggle-auth-btn");
+  btn.textContent = btn.textContent.includes("註冊") ? "已有帳號？返回登入" : "還沒有帳號？前往註冊";
 }
 
 async function handleLogout() {
@@ -87,124 +45,26 @@ async function handleLogout() {
   window.location.href = "index.html";
 }
 
-async function getCurrentUser() {
-  const { data } = await supabaseClient.auth.getUser();
-  return data?.user || null;
-}
-
-// ===== 4. 資料與統計邏輯 =====
-
+// ===== 4. 數據與統計邏輯 (核心：平均時速計算) =====
 async function loadLedger() {
   if (!ledgerTbodyEl) return;
-  const user = await getCurrentUser();
+  const { data: { user } } = await supabaseClient.auth.getUser();
   if (!user) return;
 
-  // 1. 抓取騎乘紀錄
+  // 抓取紀錄
   const { data: logs, error: logError } = await supabaseClient
     .from("cycling_logs")
     .select("*")
     .order("ride_date", { ascending: false });
 
-  if (logError) return logDebug("讀取失敗", logError);
+  if (logError) return console.error(logError);
 
-  // 2. 計算平均值並顯示
+  // --- 統計計算 ---
   const statsBar = document.getElementById("stats-bar");
-  if (statsBar) {
+  if (statsBar && logs.length > 0) {
     const totalCount = logs.length;
-    let avgDuration = 0;
-    if (totalCount > 0) {
-      const totalDuration = logs.reduce((sum, row) => sum + (Number(row.duration) || 0), 0);
-      avgDuration = (totalDuration / totalCount).toFixed(1);
-      statsBar.classList.remove("hidden");
-      document.getElementById("stat-total-count").textContent = totalCount;
-      document.getElementById("stat-avg-duration").textContent = `${avgDuration} min`;
-    }
-  }
-
-  // 3. 渲染表格
-  const { data: profiles } = await supabaseClient.from("profiles").select("id, username");
-  const profileMap = Object.fromEntries((profiles || []).map(p => [p.id, p.username]));
-
-  ledgerTbodyEl.innerHTML = logs.length ? "" : '<tr><td colspan="7">尚無紀錄</td></tr>';
-  logs.forEach(row => {
-    const tr = document.createElement("tr");
-    tr.innerHTML = `
-      <td>${row.ride_date}</td>
-      <td><strong>${row.route_name}</strong></td>
-      <td>${row.distance} km</td>
-      <td>${row.duration} min</td>
-      <td><span class="tag user">${row.difficulty || '一般'}</span></td>
-      <td>${profileMap[row.user_id] || '未知'}</td>
-      <td><button class="btn-outline" onclick="deleteEntry(${row.id})" style="color:red">刪除</button></td>
-    `;
-    ledgerTbodyEl.appendChild(tr);
-  });
-}
-
-//4. 新增紀錄
-async function addEntry() {
-  const payload = {
-    ride_date: document.getElementById("ride-date").value,
-    route_name: document.getElementById("ride-route").value,
-    distance: parseFloat(document.getElementById("ride-distance").value),
-    duration: parseInt(document.getElementById("ride-duration").value),
-    difficulty: document.getElementById("ride-difficulty").value,
-    note: document.getElementById("ride-note").value
-  };
-
-  if (!payload.ride_date || !payload.route_name || !payload.distance) return alert("請填寫必要欄位");
-
-  const { error } = await supabaseClient.from("cycling_logs").insert(payload);
-  if (error) alert("儲存失敗: " + error.message);
-  else {
-    document.getElementById("ride-route").value = "";
-    loadLedger();
-  }
-}
-
-async function deleteEntry(id) {
-  if (!confirm("確定刪除？")) return;
-  await supabaseClient.from("cycling_logs").delete().eq("id", id);
-  loadLedger();
-}
-//5. 在 loadLedger 渲染表格的迴圈內修改
-logs.forEach(row => {
-    // --- 新增：計算該筆紀錄的時速 ---
-    const distance = parseFloat(row.distance) || 0;
-    const durationMin = parseInt(row.duration) || 0;
-    // 避免除以 0 的錯誤
-    const speed = durationMin > 0 ? (distance / (durationMin / 60)).toFixed(1) : 0;
-
-    const tr = document.createElement("tr");
-    tr.innerHTML = `
-      <td>${row.ride_date}</td>
-      <td><strong>${row.route_name}</strong></td>
-      <td>${distance} km</td>
-      <td>${durationMin} min</td>
-      <td><span style="color: #2563eb; font-weight: bold;">${speed} km/h</span></td> <td><span class="tag user">${row.difficulty || '一般'}</span></td>
-      <td>${profileMap[row.user_id] || '車友'}</td>
-      <td><button class="btn-outline" onclick="deleteEntry(${row.id})" style="color:red">刪除</button></td>
-    `;
-    ledgerTbodyEl.appendChild(tr);
-});
-
-// ===== 5. 頁面初始化 =====
-document.addEventListener("DOMContentLoaded", async () => {
-  const user = await getCurrentUser();
-  const isIndex = !!document.getElementById("index-page");
-  const isLedger = !!document.getElementById("ledger-page");
-
-  if (jsStatusEl) jsStatusEl.textContent = "✅ 系統就緒";
-
-  if (isIndex && user) window.location.href = "ledger.html";
-  if (isLedger && !user) window.location.href = "index.html";
-  
-  if (user && isLedger) {
-    const { data: profile } = await supabaseClient.from("profiles").select("username").eq("id", user.id).single();
-    if (userInfoEl) userInfoEl.innerHTML = `歡迎回來，<strong>${profile?.username || user.email}</strong>`;
+    const totalDist = logs.reduce((sum, r) => sum + (Number(r.distance) || 0), 0);
+    const totalTime = logs.reduce((sum, r) => sum + (Number(r.duration) || 0), 0);
     
-    document.getElementById("ledger-input")?.classList.remove("hidden");
-    document.getElementById("ledger-list")?.classList.remove("hidden");
-    loadLedger();
-  }
-});
+    // 計算總平均時速: (總公里 / (總分鐘/60))
+    const totalAvgSpeed = totalTime > 0 ? (totalDist /
