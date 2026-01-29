@@ -64,6 +64,64 @@ async function getCurrentUser() {
 
 // ===== 4. 單車紀錄操作 (CRUD) =====
 
+// 修改後的 loadLedger 函式片段
+async function loadLedger() {
+  if (!ledgerTbodyEl) return;
+  
+  const user = await getCurrentUser();
+  if (!user) return;
+
+  logDebug("正在讀取單車紀錄...");
+  
+  const { data: logs, error: logError } = await supabaseClient
+    .from("cycling_logs")
+    .select("*")
+    .order("ride_date", { ascending: false });
+
+  if (logError) {
+    logDebug("讀取紀錄失敗", logError);
+    return;
+  }
+
+  // --- 新增：計算平均耗時邏輯 ---
+  const totalCount = logs.length;
+  let avgDuration = 0;
+
+  if (totalCount > 0) {
+    // 累加所有紀錄的 duration
+    const totalDuration = logs.reduce((sum, row) => sum + (Number(row.duration) || 0), 0);
+    // 計算平均值，取到小數點第一位
+    avgDuration = (totalDuration / totalCount).toFixed(1);
+    
+    // 顯示到畫面上
+    document.getElementById("stats-bar").classList.remove("hidden");
+    document.getElementById("stat-total-count").textContent = totalCount;
+    document.getElementById("stat-avg-duration").textContent = `${avgDuration} min`;
+  } else {
+    document.getElementById("stats-bar").classList.add("hidden");
+  }
+  // -------------------------
+
+  // (下方原本渲染表格的程式碼保持不變...)
+  const { data: profiles } = await supabaseClient.from("profiles").select("id, username");
+  const profileMap = Object.fromEntries((profiles || []).map(p => [p.id, p.username]));
+
+  ledgerTbodyEl.innerHTML = logs.length ? "" : '<tr><td colspan="7">尚無紀錄</td></tr>';
+  
+  logs.forEach(row => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${row.ride_date}</td>
+      <td><strong>${row.route_name}</strong></td>
+      <td>${row.distance} km</td>
+      <td>${row.duration} min</td>
+      <td><span class="tag user">${row.difficulty || '一般'}</span></td>
+      <td>${profileMap[row.user_id] || '未知車手'}</td>
+      <td><button class="btn-outline" onclick="deleteEntry(${row.id})" style="color:red">刪除</button></td>
+    `;
+    ledgerTbodyEl.appendChild(tr);
+  });
+}
 async function loadLedger() {
   if (!ledgerTbodyEl) return;
   
