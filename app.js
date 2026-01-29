@@ -1,7 +1,7 @@
 // ===== 1. Supabase 設定 =====
 // 請務必確認這裡使用的是 anon / public key，而不是 service_role key
 const SUPABASE_URL = "https://bgiwbmmloczysitrepxt.supabase.co";
-const SUPABASE_KEY = "這裡請填入你的_anon_public_key"; 
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJnaXdibW1sb2N6eXNpdHJlcHh0Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2OTQ4ODQ3MywiZXhwIjoyMDg1MDY0NDczfQ.J9x82H5Q5OCIEJRx4fDeCu1sHAGyaPKxk6BTOweJiJM"; 
 
 const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
