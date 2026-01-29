@@ -1,95 +1,65 @@
 <!DOCTYPE html>
-<html lang="zh-TW">
+<html lang="zh-Hant">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>我的騎乘紀錄 - 單車日誌</title>
-  <link rel="stylesheet" href="style.css" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>單車日誌 - 紀錄後台</title>
+  <link rel="stylesheet" href="style.css">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="app.js" defer></script>
 </head>
-<body>
-  <div class="container" id="ledger-page">
-    <div class="nav-bar">
-      <h1>🚴 我的騎乘紀錄</h1>
-      <div class="btn-group">
-        <button class="btn-outline" onclick="handleLogout()">安全登出</button>
+<body id="ledger-page">
+  <div class="container">
+    <header style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+      <h1 id="user-info" style="margin: 0;">讀取中...</h1>
+      <button class="btn-outline" onclick="handleLogout()" style="color: #ef4444; border-color: #ef4444;">登出</button>
+    </header>
+
+    <div id="stats-bar" class="card hidden" style="display: flex; gap: 15px; justify-content: space-around; text-align: center; background: #f0f7ff; border-left: 5px solid #2563eb;">
+      <div>
+        <div style="font-size: 12px; color: #64748b;">總次數</div>
+        <div id="stat-total-count" style="font-size: 18px; font-weight: bold;">0</div>
+      </div>
+      <div>
+        <div style="font-size: 12px; color: #64748b;">平均耗時</div>
+        <div id="stat-avg-duration" style="font-size: 18px; font-weight: bold;">0 min</div>
+      </div>
+      <div>
+        <div style="font-size: 12px; color: #64748b;">平均時速</div>
+        <div id="stat-avg-speed" style="font-size: 18px; font-weight: bold; color: #2563eb;">0 km/h</div>
       </div>
     </div>
 
-    <div id="user-info" class="user-info-bar">檢查狀態中...</div>
-
-    <div id="stats-bar" class="card hidden" style="display: flex; gap: 20px; justify-content: center; align-items: center; text-align: center; margin-bottom: 20px;">
-  <div>
-    <div style="font-size: 14px; color: #64748b;">總騎乘次數</div>
-    <div id="stat-total-count" style="font-size: 24px; font-weight: bold; color: #2563eb;">0</div>
-  </div>
-  <div style="width: 1px; height: 40px; background: #e2e8f0;"></div>
-  <div>
-    <div style="font-size: 14px; color: #64748b;">總平均耗時</div>
-    <div id="stat-avg-duration" style="font-size: 24px; font-weight: bold; color: #16a34a;">0 min</div>
-  </div>
-</div>
     <div id="ledger-input" class="card hidden">
       <h3>新增紀錄</h3>
       <div class="row">
-        <div class="input-group">
-          <label>日期</label>
-          <input id="ride-date" type="date" />
-        </div>
-        <div class="input-group">
-          <label>路線名稱</label>
-          <input id="ride-route" placeholder="例如：淡水河濱" />
-        </div>
-        <div class="input-group">
-          <label>距離 (km)</label>
-          <input id="ride-distance" type="number" step="0.1" />
-        </div>
-        <div class="input-group">
-          <label>耗時 (分鐘)</label>
-          <input id="ride-duration" type="number" />
-        </div>
+        <input type="date" id="ride-date">
+        <input type="text" id="ride-route" placeholder="路線">
+        <input type="number" id="ride-distance" placeholder="km">
+        <input type="number" id="ride-duration" placeholder="min">
+        <select id="ride-difficulty">
+           <option value="一般">一般</option>
+           <option value="挑戰">挑戰</option>
+        </select>
       </div>
-      <div class="row">
-        <div class="input-group">
-          <label>難度</label>
-          <select id="ride-difficulty">
-            <option value="輕鬆">輕鬆</option>
-            <option value="挑戰">挑戰</option>
-            <option value="專業">專業</option>
-          </select>
-        </div>
-        <div class="input-group flex-2">
-          <label>心得備註</label>
-          <input id="ride-note" placeholder="當天天氣或體感狀況" />
-        </div>
-        <button class="btn-success" onclick="addEntry()">儲存紀錄</button>
-      </div>
+      <button class="btn-primary" onclick="addEntry()" style="margin-top:10px; width:100%;">儲存紀錄</button>
     </div>
 
     <div id="ledger-list" class="card hidden">
-      <h3>歷程清單</h3>
-      <div class="table-container">
-        <table>
-          <thead>
-            <tr>
-              <th>日期</th>
-              <th>路線</th>
-              <th>距離</th>
-              <th>耗時</th><th>難度</th>
-              <th>難度</th>
-              <th>車手</th>
-              <th>操作</th>
-            </tr>
-          </thead>
-          <tbody id="ledger-tbody">
-            <tr><td colspan="7">載入中...</td></tr>
-          </tbody>
-        </table>
-      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>日期</th>
+            <th>路線</th>
+            <th>距離</th>
+            <th>耗時</th>
+            <th>均速</th> <th>車手</th>
+            <th>操作</th>
+          </tr>
+        </thead>
+        <tbody id="ledger-tbody"></tbody>
+      </table>
     </div>
-
-    <pre id="debug" class="debug"></pre>
   </div>
+  <script src="app.js"></script>
 </body>
 </html>
