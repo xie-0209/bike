@@ -141,7 +141,7 @@ async function loadLedger() {
   });
 }
 
-// 新增紀錄
+//4. 新增紀錄
 async function addEntry() {
   const payload = {
     ride_date: document.getElementById("ride-date").value,
@@ -167,6 +167,26 @@ async function deleteEntry(id) {
   await supabaseClient.from("cycling_logs").delete().eq("id", id);
   loadLedger();
 }
+//5. 在 loadLedger 渲染表格的迴圈內修改
+logs.forEach(row => {
+    // --- 新增：計算該筆紀錄的時速 ---
+    const distance = parseFloat(row.distance) || 0;
+    const durationMin = parseInt(row.duration) || 0;
+    // 避免除以 0 的錯誤
+    const speed = durationMin > 0 ? (distance / (durationMin / 60)).toFixed(1) : 0;
+
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${row.ride_date}</td>
+      <td><strong>${row.route_name}</strong></td>
+      <td>${distance} km</td>
+      <td>${durationMin} min</td>
+      <td><span style="color: #2563eb; font-weight: bold;">${speed} km/h</span></td> <td><span class="tag user">${row.difficulty || '一般'}</span></td>
+      <td>${profileMap[row.user_id] || '車友'}</td>
+      <td><button class="btn-outline" onclick="deleteEntry(${row.id})" style="color:red">刪除</button></td>
+    `;
+    ledgerTbodyEl.appendChild(tr);
+});
 
 // ===== 5. 頁面初始化 =====
 document.addEventListener("DOMContentLoaded", async () => {
