@@ -73,6 +73,7 @@ async function loadLedger() {
 
   logDebug("正在讀取單車紀錄...");
   
+  // 從 Supabase 抓取騎乘紀錄
   const { data: logs, error: logError } = await supabaseClient
     .from("cycling_logs")
     .select("*")
@@ -83,24 +84,45 @@ async function loadLedger() {
     return;
   }
 
-  // --- 新增：計算平均耗時邏輯 ---
+  // === 計算統計數據邏輯 ===
   const totalCount = logs.length;
   let avgDuration = 0;
 
   if (totalCount > 0) {
-    // 累加所有紀錄的 duration
+    // 將所有紀錄的 duration 數值加總
     const totalDuration = logs.reduce((sum, row) => sum + (Number(row.duration) || 0), 0);
-    // 計算平均值，取到小數點第一位
+    // 計算平均值，取至小數點後一位
     avgDuration = (totalDuration / totalCount).toFixed(1);
     
-    // 顯示到畫面上
+    // 將數據寫入 HTML 元素
     document.getElementById("stats-bar").classList.remove("hidden");
     document.getElementById("stat-total-count").textContent = totalCount;
     document.getElementById("stat-avg-duration").textContent = `${avgDuration} min`;
   } else {
+    // 若無資料則隱藏統計列
     document.getElementById("stats-bar").classList.add("hidden");
   }
-  // -------------------------
+  // ======================
+
+  // (其餘表格渲染邏輯維持不變，如下)
+  const { data: profiles } = await supabaseClient.from("profiles").select("id, username");
+  const profileMap = Object.fromEntries((profiles || []).map(p => [p.id, p.username]));
+
+  ledgerTbodyEl.innerHTML = logs.length ? "" : '<tr><td colspan="7">尚無紀錄</td></tr>';
+  logs.forEach(row => {
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td>${row.ride_date}</td>
+      <td><strong>${row.route_name}</strong></td>
+      <td>${row.distance} km</td>
+      <td>${row.duration} min</td>
+      <td><span class="tag user">${row.difficulty || '一般'}</span></td>
+      <td>${profileMap[row.user_id] || '未知車手'}</td>
+      <td><button class="btn-outline" onclick="deleteEntry(${row.id})" style="color:red">刪除</button></td>
+    `;
+    ledgerTbodyEl.appendChild(tr);
+  });
+}
 
   // (下方原本渲染表格的程式碼保持不變...)
   const { data: profiles } = await supabaseClient.from("profiles").select("id, username");
