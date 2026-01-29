@@ -169,3 +169,61 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   }
 });
+// 切換登入/註冊介面
+function toggleAuthMode() {
+  const loginForm = document.getElementById("login-form");
+  const signupForm = document.getElementById("signup-form");
+  const toggleBtn = document.getElementById("toggle-auth-btn");
+
+  if (signupForm.classList.contains("hidden")) {
+    loginForm.classList.add("hidden");
+    signupForm.classList.remove("hidden");
+    toggleBtn.textContent = "已有帳號？返回登入";
+  } else {
+    loginForm.classList.remove("hidden");
+    signupForm.classList.add("hidden");
+    toggleBtn.textContent = "還沒有帳號？前往註冊";
+  }
+}
+
+// 處理註冊邏輯
+async function handleSignup() {
+  const account = document.getElementById("signup-account").value.trim();
+  const password = document.getElementById("signup-password").value;
+  const username = document.getElementById("signup-username").value.trim();
+
+  if (!account || !password || !username) return alert("請填寫所有欄位");
+  if (password.length < 6) return alert("密碼長度至少需 6 位數");
+
+  const email = account + "@demo.local"; // 統一使用 demo 後綴
+  logDebug("嘗試註冊中...", { email });
+
+  // 1. 在 Supabase Auth 註冊帳號
+  const { data: authData, error: authError } = await supabaseClient.auth.signUp({
+    email,
+    password,
+  });
+
+  if (authError) {
+    logDebug("註冊失敗", authError);
+    return alert("註冊失敗: " + authError.message);
+  }
+
+  const user = authData.user;
+  if (user) {
+    // 2. 在 profiles 表中建立對應資料
+    const { error: profileError } = await supabaseClient
+      .from("profiles")
+      .insert([
+        { id: user.id, username: username, role: "user" } // 預設角色為 user
+      ]);
+
+    if (profileError) {
+      logDebug("建立 Profile 失敗", profileError);
+      return alert("帳號已建立，但設定個人資料時出錯。");
+    }
+
+    alert("註冊成功！歡迎加入單車日誌。");
+    window.location.href = "ledger.html";
+  }
+}
