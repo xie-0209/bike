@@ -1,65 +1,48 @@
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>單車日誌 - 紀錄後台</title>
-  <link rel="stylesheet" href="style.css">
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>單車日誌 - 紀錄後台</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body id="ledger-page">
-  <div class="container">
-    <header style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-      <h1 id="user-info" style="margin: 0;">讀取中...</h1>
-      <button class="btn-outline" onclick="handleLogout()" style="color: #ef4444; border-color: #ef4444;">登出</button>
-    </header>
+    <div class="container">
+        <header style="display: flex; justify-content: space-between; align-items: center;">
+            <h2 id="user-info">載入中...</h2>
+            <button onclick="handleLogout()">登出</button>
+        </header>
 
-    <div id="stats-bar" class="card hidden" style="display: flex; gap: 15px; justify-content: space-around; text-align: center; background: #f0f7ff; border-left: 5px solid #2563eb;">
-      <div>
-        <div style="font-size: 12px; color: #64748b;">總次數</div>
-        <div id="stat-total-count" style="font-size: 18px; font-weight: bold;">0</div>
-      </div>
-      <div>
-        <div style="font-size: 12px; color: #64748b;">平均耗時</div>
-        <div id="stat-avg-duration" style="font-size: 18px; font-weight: bold;">0 min</div>
-      </div>
-      <div>
-        <div style="font-size: 12px; color: #64748b;">平均時速</div>
-        <div id="stat-avg-speed" style="font-size: 18px; font-weight: bold; color: #2563eb;">0 km/h</div>
-      </div>
-    </div>
+        <div id="stats-bar" class="card hidden" style="display: flex; justify-content: space-around; background: #e0f2fe;">
+            <div>次數：<span id="stat-total-count">0</span></div>
+            <div>平均耗時：<span id="stat-avg-duration">0</span></div>
+            <div>平均時速：<span id="stat-avg-speed" style="color: blue; font-weight: bold;">0 km/h</span></div>
+        </div>
 
-    <div id="ledger-input" class="card hidden">
-      <h3>新增紀錄</h3>
-      <div class="row">
-        <input type="date" id="ride-date">
-        <input type="text" id="ride-route" placeholder="路線">
-        <input type="number" id="ride-distance" placeholder="km">
-        <input type="number" id="ride-duration" placeholder="min">
-        <select id="ride-difficulty">
-           <option value="一般">一般</option>
-           <option value="挑戰">挑戰</option>
-        </select>
-      </div>
-      <button class="btn-primary" onclick="addEntry()" style="margin-top:10px; width:100%;">儲存紀錄</button>
-    </div>
+        <div class="card">
+            <div class="row" style="display: flex; gap: 5px; flex-wrap: wrap;">
+                <input type="date" id="ride-date">
+                <input type="text" id="ride-route" placeholder="路線">
+                <input type="number" id="ride-distance" placeholder="公里">
+                <input type="number" id="ride-duration" placeholder="分鐘">
+                <select id="ride-difficulty">
+                    <option value="一般">一般</option>
+                    <option value="挑戰">挑戰</option>
+                </select>
+                <button onclick="addEntry()">新增</button>
+            </div>
+        </div>
 
-    <div id="ledger-list" class="card hidden">
-      <table>
-        <thead>
-          <tr>
-            <th>日期</th>
-            <th>路線</th>
-            <th>距離</th>
-            <th>耗時</th>
-            <th>均速</th> <th>車手</th>
-            <th>操作</th>
-          </tr>
-        </thead>
-        <tbody id="ledger-tbody"></tbody>
-      </table>
+        <table border="1" style="width: 100%; border-collapse: collapse; margin-top: 20px;">
+            <thead>
+                <tr style="background: #f3f4f6;">
+                    <th>日期</th><th>路線</th><th>距離</th><th>耗時</th><th>均速</th><th>車手</th><th>刪除</th>
+                </tr>
+            </thead>
+            <tbody id="ledger-tbody"></tbody>
+        </table>
     </div>
-  </div>
-  <script src="app.js"></script>
+    <script src="app.js"></script>
 </body>
 </html>
