@@ -1,5 +1,6 @@
-const SUPABASE_URL = "https://xyiwwgmcduonlbdjgufr.supabase.co";
-const SUPABASE_KEY = "sb_publishable_X53Cpp8dwHeL5zs06sOc4w_HV2fgguW";
+const SUPABASE_URL ="https://bgiwbmmloczysitrepxt.supabase.co";
+const SUPABASE_KEY ="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJnaXdibW1sb2N6eXNpdHJlcHh0Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2OTQ4ODQ3MywiZXhwIjoyMDg1MDY0NDczfQ.J9x82H5Q5OCIEJRx4fDeCu1sHAGyaPKxk6BTOweJiJM";
+
 const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 const debugEl = document.getElementById("debug");
